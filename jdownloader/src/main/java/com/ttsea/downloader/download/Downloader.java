@@ -84,7 +84,7 @@ public class Downloader implements TaskHandler {
      *
      * @param info 下载信息
      */
-    public Downloader(DownloaderInfo info) {
+    protected Downloader(DownloaderInfo info) {
         this(info, null);
     }
 
@@ -274,6 +274,7 @@ public class Downloader implements TaskHandler {
             JDownloadLog.d(TAG, "downloader already paused, state:" + getStateStr(getState()));
             return;
         }
+
         dispose();
         setState(Downloader.STATE_PAUSED);
         setReason(reason);
@@ -298,6 +299,7 @@ public class Downloader implements TaskHandler {
             JDownloadLog.d(TAG, "downloader already canceled, state:" + getStateStr(getState()));
             return;
         }
+
         dispose();
         setState(state);
         setReason(reason);

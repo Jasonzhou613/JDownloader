@@ -3,6 +3,7 @@ package com.ttsea.downloader.sample.base;
 import android.app.Application;
 
 import com.squareup.leakcanary.LeakCanary;
+import com.ttsea.downloader.download.JDownloaderManager;
 import com.ttsea.downloader.sample.Config;
 
 
@@ -36,6 +37,6 @@ public class MyApplication extends Application {
         if (Config.DEBUG) {
             LeakCanary.install(this);
         }
-        //JDownloaderManager.class.debugMode(Config.DEBUG);
+        JDownloaderManager.getInstance(this).debugMode(Config.DEBUG);
     }
 }

@@ -1,7 +1,7 @@
 package com.ttsea.downloader.sample.download;
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -9,10 +9,9 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-
-import com.ttsea.downloader.download.JDownloadLog;
 import com.ttsea.downloader.download.Downloader;
 import com.ttsea.downloader.download.DownloaderInfo;
+import com.ttsea.downloader.download.JDownloadLog;
 import com.ttsea.downloader.download.SaveFileMode;
 import com.ttsea.downloader.listener.DownloaderListener;
 import com.ttsea.downloader.sample.DigitUtils;
@@ -27,7 +26,7 @@ import com.ttsea.downloader.sample.R;
  * <b>version:</b> 1.0 <br>
  * <b>last modified date:</b> 2017/2/13 17:10.
  */
-public class SingleDownloadActivity extends Activity implements View.OnClickListener {
+public class SingleDownloadActivity extends AppCompatActivity implements View.OnClickListener {
     private final String TAG = "SingleDownloadActivity";
 
     private EditText etUrl;
@@ -227,14 +226,12 @@ public class SingleDownloadActivity extends Activity implements View.OnClickList
         };
 
         downloaderInfo.setDownloaderListener(downloaderListener);
-        downloader = new Downloader(downloaderInfo);
+        //downloader = new Downloader(downloaderInfo);
     }
 
     public void switchDownloaderState() {
         if (downloader.getState() == Downloader.STATE_PENDING
-                || downloader.getState() == Downloader.STATE_LINKING
-                || downloader.getState() == Downloader.STATE_START
-                || downloader.getState() == Downloader.STATE_DOWNLOADING) {
+                || downloader.isRunning()) {
             downloader.pause(Downloader.PAUSED_HUMAN);
         } else {
             downloader.start();

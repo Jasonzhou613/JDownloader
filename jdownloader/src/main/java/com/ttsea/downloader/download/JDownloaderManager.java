@@ -37,7 +37,7 @@ public class JDownloaderManager {
     private int downloadPool = DEFAULT_DOWNLOAD_POOL;
 
     /** 获取{@link JDownloaderManager} 实例 */
-    public JDownloaderManager getInstance(Context context) {
+    public static JDownloaderManager getInstance(Context context) {
         if (instance == null) {
             synchronized (JDownloaderManager.class) {
                 instance = new JDownloaderManager(context.getApplicationContext());
@@ -125,8 +125,8 @@ public class JDownloaderManager {
         }
 
         downloaderMap.put(info.getUrl(), downloader);
-
     }
+
 
     public void start(String url) {
         Downloader downloader = downloaderMap.get(url);

@@ -1,7 +1,7 @@
 package com.ttsea.downloader.sample.download;
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,7 +19,7 @@ import com.ttsea.downloader.sample.R;
  * <b>version:</b> 1.0 <br>
  * <b>last modified date:</b> 2017/2/21 21:10.
  */
-public class MultiDownloadActivity extends Activity implements View.OnClickListener {
+public class MultiDownloadActivity extends AppCompatActivity implements View.OnClickListener {
     private final String TAG = "SingleDownloadActivity";
 
     private EditText etUrl;
