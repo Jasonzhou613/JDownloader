@@ -1,0 +1,24 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
+
+        <Button
+            android:id="@+id/btnSingleDownload"
+            style="@style/btn_style"
+            android:text="@string/btn_single_download"/>
+
+        <Button
+            android:id="@+id/btnMultiDownload"
+            style="@style/btn_style"
+            android:text="@string/btn_multi_download"/>
+
+    </LinearLayout>
+
+</ScrollView>

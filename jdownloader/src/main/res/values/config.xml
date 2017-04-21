@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 保存下载文件的根目录 -->
+    <string name="_j_download_root_dir">JDownloader</string>
+    <!-- 保存下载文件的二级目录目录 -->
+    <string name="_j_download_lower_dir">download</string>
+
+</resources>

@@ -1,0 +1,10 @@
+<resources>
+
+    <string name="app_name">JDownloader</string>
+    <string name="__leak_canary_display_activity_label">JFileServer-Leaks</string>
+
+    <string name="btn_single_download">单个下载</string>
+    <string name="btn_multi_download">多个个下载</string>
+    <string name="btn_test">test</string>
+
+</resources>
