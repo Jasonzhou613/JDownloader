@@ -124,10 +124,13 @@ public class Downloader implements TaskHandler {
 
             @Override
             public void onComplete() {
+                //下载完成设置状态
                 setState(Downloader.STATE_SUCCESSFUL);
                 setReason(Downloader.STATE_SUCCESSFUL);
+                //计算文件的md5
                 String fileMd5 = MD5Utils.getFileMD5(new File(downloaderInfo.getSaveFilePath(), downloaderInfo.getFileName()));
                 downloaderInfo.setFileMd5(fileMd5);
+                //保存下载信息
                 saveDownloadInfo();
                 JDownloadLog.d(TAG, "file md5: " + fileMd5);
                 super.onComplete();

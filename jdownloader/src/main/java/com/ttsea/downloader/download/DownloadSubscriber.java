@@ -186,6 +186,7 @@ class DownloadSubscriber<T> implements Observer<T>, DownloaderListener {
                 void changeComplete() {
                     JDownloadLog.d(TAG, "onComplete, threadName:" + Thread.currentThread().getName());
                     downloaderInfo.getDownloaderListener().onComplete();
+                    JDownloaderManager.getInstance(downloaderInfo.getContext()).fit();
                 }
             };
         }

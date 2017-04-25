@@ -12,6 +12,7 @@ import android.widget.TextView;
 import com.ttsea.downloader.download.Downloader;
 import com.ttsea.downloader.download.DownloaderInfo;
 import com.ttsea.downloader.download.JDownloadLog;
+import com.ttsea.downloader.download.JDownloaderManager;
 import com.ttsea.downloader.download.SaveFileMode;
 import com.ttsea.downloader.listener.DownloaderListener;
 import com.ttsea.downloader.sample.DigitUtils;
@@ -226,7 +227,8 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
         };
 
         downloaderInfo.setDownloaderListener(downloaderListener);
-        //downloader = new Downloader(downloaderInfo);
+        JDownloaderManager.getInstance(this).addDownloader(downloaderInfo);
+        downloader = JDownloaderManager.getInstance(this).getDownloader(downloaderInfo.getUrl());
     }
 
     public void switchDownloaderState() {
