@@ -15,4 +15,9 @@
         <item name="android:gravity">center</item>
     </style>
 
+    <style name="btn_style2" parent="btn_style">
+        <item name="android:layout_width">80dip</item>
+        <item name="android:layout_marginTop">5dip</item>
+    </style>
+
 </resources>

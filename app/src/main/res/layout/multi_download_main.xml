@@ -2,16 +2,40 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
     android:paddingBottom="5dp"
     android:paddingLeft="10dp"
     android:paddingRight="10dp"
     android:paddingTop="5dp">
 
-    <EditText
-        android:id="@+id/etUrl"
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/etUrl"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.0"
+            android:maxLines="3"/>
+
+        <Button
+            android:id="@+id/btnAddCustom"
+            style="@style/btn_style2"
+            android:layout_marginTop="0dp"
+            android:text="添加"/>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnAddDefault"
+        style="@style/btn_style2"
+        android:layout_width="wrap_content"
+        android:text="添加一个默认下载"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,23 +44,39 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btnAdd"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:text="添加下载"/>
+            android:id="@+id/btnStartAll"
+            style="@style/btn_style2"
+            android:text="开始所有"/>
 
         <View
-            android:layout_width="20dp"
+            android:layout_width="4dp"
+            android:layout_height="20dp"
+            android:background="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/btnPauseAll"
+            style="@style/btn_style2"
+            android:text="暂停所有"/>
+
+        <View
+            android:layout_width="4dp"
             android:layout_height="20dp"
             android:background="@android:color/transparent"/>
 
         <Button
             android:id="@+id/btnCancelAll"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
+            style="@style/btn_style2"
             android:text="取消所有"/>
+
+        <View
+            android:layout_width="4dp"
+            android:layout_height="20dp"
+            android:background="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/btnDeleteAll"
+            style="@style/btn_style2"
+            android:text="删除所有"/>
 
     </LinearLayout>
 

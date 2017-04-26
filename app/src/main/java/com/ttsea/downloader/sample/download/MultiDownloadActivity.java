@@ -23,10 +23,15 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
     private final String TAG = "SingleDownloadActivity";
 
     private EditText etUrl;
-    private Button btnAdd;
+    private Button btnAddCustom;
+    private Button btnAddDefault;
+    private Button btnStartAll;
+    private Button btnPauseAll;
     private Button btnCancelAll;
+    private Button btnDeleteAll;
     private ListView lvList;
 
+    private int position = 0;
     private String[] urls = new String[]{
             TestDownloadUrl.TEMP_URL,
             TestDownloadUrl.DOWNLOAD_URL_20_3,
@@ -39,32 +44,48 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.multi_download_main);
 
         etUrl = (EditText) findViewById(R.id.etUrl);
-
-        btnAdd = (Button) findViewById(R.id.btnAdd);
+        btnAddCustom = (Button) findViewById(R.id.btnAddCustom);
+        btnAddDefault = (Button) findViewById(R.id.btnAddDefault);
+        btnStartAll = (Button) findViewById(R.id.btnStartAll);
+        btnPauseAll = (Button) findViewById(R.id.btnPauseAll);
         btnCancelAll = (Button) findViewById(R.id.btnCancelAll);
+        btnDeleteAll = (Button) findViewById(R.id.btnDeleteAll);
         lvList = (ListView) findViewById(R.id.lvList);
 
-        btnAdd.setOnClickListener(this);
+        btnAddCustom.setOnClickListener(this);
+        btnAddDefault.setOnClickListener(this);
+        btnStartAll.setOnClickListener(this);
+        btnPauseAll.setOnClickListener(this);
         btnCancelAll.setOnClickListener(this);
+        btnDeleteAll.setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btnAdd:
+            case R.id.btnAddCustom://添加一个自定义的下载任务
                 break;
 
-            case R.id.btnCancelAll:
+            case R.id.btnAddDefault://添加一个已经定义好的下载任务，如 urls
+                break;
+
+            case R.id.btnStartAll://开始全部下载任务
+                break;
+
+            case R.id.btnPauseAll://暂停全部下载任务
+                break;
+
+            case R.id.btnCancelAll://取消全部下载任务
+                break;
+
+            case R.id.btnDeleteAll://删除所有下载任务
                 break;
 
             default:
                 break;
         }
     }
-
-
 }

@@ -28,8 +28,12 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="com.ttsea.downloader.sample.download.SingleDownloadActivity"/>
-        <activity android:name="com.ttsea.downloader.sample.download.MultiDownloadActivity"/>
+        <activity
+            android:name="com.ttsea.downloader.sample.download.SingleDownloadActivity"
+            android:windowSoftInputMode="stateHidden"/>
+        <activity
+            android:name="com.ttsea.downloader.sample.download.MultiDownloadActivity"
+            android:windowSoftInputMode="stateHidden"/>
 
     </application>
 

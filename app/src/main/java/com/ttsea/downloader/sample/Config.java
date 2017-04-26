@@ -10,5 +10,5 @@ package com.ttsea.downloader.sample;
  * <b>last modified date:</b> 2017/2/15 18:14.
  */
 public class Config {
-    public static boolean DEBUG = false;
+    public static boolean DEBUG = true;
 }

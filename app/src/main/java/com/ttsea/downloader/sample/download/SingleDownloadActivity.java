@@ -83,6 +83,19 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
         downloader.getDownloaderInfo().setDownloaderListener(downloaderListener);
 
         switch (downloader.getState()) {
+            case Downloader.STATE_LINKING:
+                downloaderListener.onLinking();
+                break;
+
+            case Downloader.STATE_START:
+                downloaderListener.onStart();
+                break;
+
+            case Downloader.STATE_DOWNLOADING:
+                downloaderListener.onDownloading(downloader.getDownloaderInfo().getHasReadLength(),
+                        downloader.getDownloaderInfo().getNeedReadLength(), 0);
+                break;
+
             case Downloader.STATE_PAUSED:
                 downloaderListener.onPause(downloader.getReason());
                 break;
@@ -162,10 +175,10 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (downloader != null &&
-                (downloader.getState() == Downloader.STATE_PENDING || downloader.isRunning())) {
-            downloader.pause(Downloader.PAUSED_HUMAN);
-        }
+//        if (downloader != null &&
+//                (downloader.getState() == Downloader.STATE_PENDING || downloader.isRunning())) {
+//            downloader.pause(Downloader.PAUSED_HUMAN);
+//        }
     }
 
     private DownloaderListener downloaderListener = new DownloaderListener() {
@@ -284,7 +297,6 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
             scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
         }
     };
-
 
     private void updateProgress(DownloaderInfo info) {
         if (downloader.isRunning() || downloader.getState() == Downloader.STATE_PENDING) {
