@@ -48,21 +48,23 @@ public class DownloadDBHelper {
         Cursor cursor = null;
         StringBuffer selection = new StringBuffer();
 
+        selection.append(" 1=1 ");
+
         if (url != null) {
-            selection.append("url = '" + url + "'");
+            selection.append(" AND url = '" + url + "'");
 
             if (threadId != null) {
                 selection.append(" AND thread_id = '" + threadId + "'");
             }
         }
 
-        selection.append(" ORDER BY add_timestamp DESC ");
+        String orderBy = " add_timestamp DESC ";
 
         try {
-            cursor = db.query(DOWNLOAD_INFO, null, selection.toString(), null, null, null, null);
+            cursor = db.query(DOWNLOAD_INFO, null, selection.toString(), null, null, null, orderBy);
 
         } catch (Exception e) {
-            JDownloadLog.d(TAG, "getDownloaderInfoCursor, Exception e:" + e.toString());
+            JDownloadLog.e(TAG, "getDownloaderInfoCursor, Exception e:" + e.toString());
             return null;
         }
 
@@ -92,7 +94,7 @@ public class DownloadDBHelper {
 
             for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
                 String thread_id = cursor.getString(cursor.getColumnIndex(DownloadDBHelper.THREAD_ID));
-                //String url = cursor.getString(cursor.getColumnIndex(DownloadDBHelper._URL));
+                String durl = cursor.getString(cursor.getColumnIndex(DownloadDBHelper._URL));
                 String save_file_path = cursor.getString(cursor.getColumnIndex(DownloadDBHelper.SAVE_FILE_PATH));
                 String file_name = cursor.getString(cursor.getColumnIndex(DownloadDBHelper.FILE_NAME));
                 String description = cursor.getString(cursor.getColumnIndex(DownloadDBHelper.DESCRIPTION));
@@ -110,6 +112,7 @@ public class DownloadDBHelper {
 
                 DownloaderInfo downloaderInfo = new DownloaderInfo(context, url);
                 downloaderInfo.setThreadId(thread_id);
+                downloaderInfo.setUrl(durl);
                 downloaderInfo.setSaveFilePath(save_file_path);
                 downloaderInfo.setFileName(file_name);
                 downloaderInfo.setDescription(description);
@@ -131,7 +134,7 @@ public class DownloadDBHelper {
             }
 
         } catch (Exception e) {
-            JDownloadLog.d(TAG, "getThreadPool, Exception e:" + e.toString());
+            JDownloadLog.e(TAG, "getThreadPool, Exception e:" + e.toString());
             return infos;
 
         } finally {
@@ -199,7 +202,7 @@ public class DownloadDBHelper {
             count = db.insertOrThrow(DOWNLOAD_INFO, null, values);
 
         } catch (Exception e) {
-            JDownloadLog.d(TAG, "add, Exception e:" + e.toString());
+            JDownloadLog.e(TAG, "add, Exception e:" + e.toString());
 
         } finally {
             closeCursor(cursor);

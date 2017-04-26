@@ -13,7 +13,7 @@ import com.ttsea.downloader.download.Downloader;
 import com.ttsea.downloader.download.DownloaderInfo;
 import com.ttsea.downloader.download.JDownloadLog;
 import com.ttsea.downloader.download.JDownloaderManager;
-import com.ttsea.downloader.download.SaveFileMode;
+import com.ttsea.downloader.exception.DownloadException;
 import com.ttsea.downloader.listener.DownloaderListener;
 import com.ttsea.downloader.sample.DigitUtils;
 import com.ttsea.downloader.sample.R;
@@ -40,6 +40,7 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
     private Button btnDelete;
     private View bottomView;
 
+    private String downloadUrl = TestDownloadUrl.TEMP_URL;
     private Downloader downloader;
     private StringBuilder stringBuilder = new StringBuilder();
 
@@ -68,9 +69,40 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
         pb.setMax(1);
         pb.setProgress(0);
 
-        etUrl.setText(TestDownloadUrl.TEMP_URL);
+        etUrl.setText(downloadUrl);
+        etUrl.setEnabled(false);
 
-        initDownloader();
+        init();
+    }
+
+    private void init() {
+        downloader = JDownloaderManager.getInstance(this).getDownloader(downloadUrl);
+        if (downloader == null) {
+            return;
+        }
+        downloader.getDownloaderInfo().setDownloaderListener(downloaderListener);
+
+        switch (downloader.getState()) {
+            case Downloader.STATE_PAUSED:
+                downloaderListener.onPause(downloader.getReason());
+                break;
+
+            case Downloader.STATE_CANCEL:
+                downloaderListener.onCancel(downloader.getReason());
+                break;
+
+            case Downloader.STATE_SUCCESSFUL:
+                downloaderListener.onComplete();
+                break;
+
+            case Downloader.STATE_FAILED:
+                downloaderListener.onError(new DownloadException(downloader.getState(),
+                        downloader.getReason(), Downloader.getStateStr(downloader.getReason())));
+                break;
+
+            default:
+                break;
+        }
     }
 
     @Override
@@ -81,178 +113,184 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
                 break;
 
             case R.id.btnCancel:
-                if (downloader != null) {
-                    downloader.cancel(Downloader.ERROR_HUMAN);
-                }
+                JDownloaderManager.getInstance(this).cancel(downloadUrl, Downloader.ERROR_HUMAN);
                 break;
 
             case R.id.btnDelete:
-                if (downloader != null) {
-                    downloader.deleteFile();
-                    downloader.deleteRecord();
-                    stringBuilder = new StringBuilder("");
-                    updateProgress(downloader.getDownloaderInfo());
-                    tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                    tvInfo.setText(stringBuilder.toString());
-
-                    scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+                if (downloader == null) {
+                    break;
                 }
+                JDownloaderManager.getInstance(this).remove(downloadUrl, true);
+
+                stringBuilder = new StringBuilder("");
+                updateProgress(downloader.getDownloaderInfo());
+                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+                tvInfo.setText(stringBuilder.toString());
+
+                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+
+                downloader.getDownloaderInfo().setDownloaderListener(null);
+                downloader = null;
+                break;
 
             default:
                 break;
         }
     }
 
-    private void initDownloader() {
+    private void addNewDownloader() {
         String url = etUrl.getText().toString();
 
-        final DownloaderInfo downloaderInfo = new DownloaderInfo(this.getApplicationContext(), url);
-        downloaderInfo.setSaveFileMode(SaveFileMode.RENAME);
-
-        DownloaderListener downloaderListener = new DownloaderListener() {
-            boolean hasSetData = false;
-
-            @Override
-            public void onPending() {
-                String msg = "等待下载..." + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
-                stringBuilder.append(msg);
-                JDownloadLog.d(TAG, msg);
-
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-
-            @Override
-            public void onLinking() {
-                String msg = "\n正在连接..." + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
-                stringBuilder.append(msg);
-                JDownloadLog.d(TAG, msg);
-
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-
-            @Override
-            public void onStart() {
-                String msg = "\n开始下载..." + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
-                stringBuilder.append(msg);
-                JDownloadLog.d(TAG, msg);
-
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-
-            @Override
-            public void onPause(int reason) {
-                String msg = "\n已暂停... reason:" + Downloader.getStateStr(reason)
-                        + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
-                stringBuilder.append(msg);
-                JDownloadLog.d(TAG, msg);
-
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-
-            @Override
-            public void onCancel(int reason) {
-                String msg = "\n已取消... reason:" + Downloader.getStateStr(reason)
-                        + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
-                stringBuilder.append(msg);
-                JDownloadLog.d(TAG, msg);
-
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-
-            @Override
-            public void onComplete() {
-                String msg = "\n已完成" + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
-                stringBuilder.append(msg);
-                JDownloadLog.d(TAG, msg);
-
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                String msg = "\n下载失败, e:" + e.getMessage()
-                        + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
-                stringBuilder.append(msg);
-                JDownloadLog.e(TAG, msg);
-
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-
-            @Override
-            public void onDownloading(long hasReadLength, long needReadLength, long speedBytePerSec) {
-                if (!hasSetData) {
-                    hasSetData = true;
-                    stringBuilder.append("\n正在下载...");
-                    JDownloadLog.d(TAG, "\n正在下载...");
-                }
-
-                String msg = getSpeedHasReadProgress(downloader.getDownloaderInfo(), speedBytePerSec);
-                stringBuilder.append(msg);
-                JDownloadLog.d(TAG, msg);
-
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-            }
-        };
-
-        downloaderInfo.setDownloaderListener(downloaderListener);
-        JDownloaderManager.getInstance(this).addDownloader(downloaderInfo);
+        DownloaderInfo downloaderInfo = new DownloaderInfo(this.getApplicationContext(), url, downloaderListener);
+        JDownloaderManager.getInstance(this).addNewDownloader(downloaderInfo);
         downloader = JDownloaderManager.getInstance(this).getDownloader(downloaderInfo.getUrl());
     }
 
     public void switchDownloaderState() {
+        if (downloader == null) {
+            addNewDownloader();
+            return;
+        }
         if (downloader.getState() == Downloader.STATE_PENDING
                 || downloader.isRunning()) {
-            downloader.pause(Downloader.PAUSED_HUMAN);
+            JDownloaderManager.getInstance(this).pause(downloadUrl, Downloader.PAUSED_HUMAN);
         } else {
-            downloader.start();
+            JDownloaderManager.getInstance(this).start(downloadUrl);
         }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (downloader != null) {
-            if (downloader.isRunning() || downloader.getState() == Downloader.STATE_PENDING) {
-                downloader.pause(Downloader.PAUSED_HUMAN);
-            }
+        if (downloader != null &&
+                (downloader.getState() == Downloader.STATE_PENDING || downloader.isRunning())) {
+            downloader.pause(Downloader.PAUSED_HUMAN);
         }
     }
+
+    private DownloaderListener downloaderListener = new DownloaderListener() {
+        boolean hasSetData = false;
+
+        @Override
+        public void onPending() {
+            String msg = "等待下载..." + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
+            stringBuilder.append(msg);
+            JDownloadLog.d(TAG, msg);
+
+            updateProgress(downloader.getDownloaderInfo());
+            tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+            tvInfo.setText(stringBuilder.toString());
+
+            scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+        }
+
+        @Override
+        public void onLinking() {
+            String msg = "\n正在连接..." + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
+            stringBuilder.append(msg);
+            JDownloadLog.d(TAG, msg);
+
+            updateProgress(downloader.getDownloaderInfo());
+            tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+            tvInfo.setText(stringBuilder.toString());
+
+            scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+        }
+
+        @Override
+        public void onStart() {
+            String msg = "\n开始下载..." + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
+            stringBuilder.append(msg);
+            JDownloadLog.d(TAG, msg);
+
+            updateProgress(downloader.getDownloaderInfo());
+            tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+            tvInfo.setText(stringBuilder.toString());
+
+            scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+        }
+
+        @Override
+        public void onPause(int reason) {
+            String msg = "\n已暂停... reason:" + Downloader.getStateStr(reason)
+                    + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
+            stringBuilder.append(msg);
+            JDownloadLog.d(TAG, msg);
+
+            updateProgress(downloader.getDownloaderInfo());
+            tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+            tvInfo.setText(stringBuilder.toString());
+
+            scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+        }
+
+        @Override
+        public void onCancel(int reason) {
+            String msg = "\n已取消... reason:" + Downloader.getStateStr(reason)
+                    + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
+            stringBuilder.append(msg);
+            JDownloadLog.d(TAG, msg);
+
+            updateProgress(downloader.getDownloaderInfo());
+            tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+            tvInfo.setText(stringBuilder.toString());
+
+            scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+        }
+
+        @Override
+        public void onComplete() {
+            String msg = "\n已完成" + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
+            stringBuilder.append(msg);
+            JDownloadLog.d(TAG, msg);
+
+            updateProgress(downloader.getDownloaderInfo());
+            tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+            tvInfo.setText(stringBuilder.toString());
+
+            scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            String msg = "\n下载失败, e:" + e.getMessage()
+                    + getSpeedHasReadProgress(downloader.getDownloaderInfo(), 0);
+            stringBuilder.append(msg);
+            JDownloadLog.e(TAG, msg);
+
+            updateProgress(downloader.getDownloaderInfo());
+            tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+            tvInfo.setText(stringBuilder.toString());
+
+            scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+        }
+
+        @Override
+        public void onDownloading(long hasReadLength, long needReadLength, long speedBytePerSec) {
+            if (!hasSetData) {
+                hasSetData = true;
+                stringBuilder.append("\n正在下载...");
+                JDownloadLog.d(TAG, "\n正在下载...");
+            }
+
+            String msg = getSpeedHasReadProgress(downloader.getDownloaderInfo(), speedBytePerSec);
+            stringBuilder.append(msg);
+            JDownloadLog.d(TAG, msg);
+
+            updateProgress(downloader.getDownloaderInfo());
+            tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+            tvInfo.setText(stringBuilder.toString());
+
+            scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+        }
+    };
+
 
     private void updateProgress(DownloaderInfo info) {
         if (downloader.isRunning() || downloader.getState() == Downloader.STATE_PENDING) {
             btnDownload.setText("暂停");
+        } else if (downloader.getState() == Downloader.STATE_SUCCESSFUL) {
+            btnDownload.setText("已完成");
         } else {
             btnDownload.setText("开始");
         }

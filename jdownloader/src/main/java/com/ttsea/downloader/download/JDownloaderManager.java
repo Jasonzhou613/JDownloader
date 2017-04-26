@@ -51,35 +51,17 @@ public class JDownloaderManager {
         init(appContext);
     }
 
+    /**
+     * 初始化工作，会将数据库里保存了的下载信息加载到downloaderMap
+     *
+     * @param context 上下文
+     */
     private void init(final Context context) {
-        downloaderMap = new TreeMap<String, Downloader>(new Comparator<String>() {
-            @Override
-            public int compare(String o1, String o2) {
-                if (downloaderMap == null) {
-                    return 0;
-                }
-//                Downloader d1 = downloaderMap.get(o1);
-//                Downloader d2 = downloaderMap.get(o2);
-//                if (d1 == null || d2 == null) {
-//                    return 0;
-//                }
-//                try {
-//                    long d1Time = Long.parseLong(d1.getDownloaderInfo().getAddTimestamp());
-//                    long d2Time = Long.parseLong(d2.getDownloaderInfo().getAddTimestamp());
-//
-//                    return d1Time > d2Time ? 1 : 0;
-//
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    JDownloadLog.e(TAG, "Exception e:" + e.getMessage());
-//                }
-
-                return 0;
-            }
-        });
+        downloaderMap = new TreeMap<String, Downloader>(new ValueComparator(downloaderMap));
 
         Observable.just("")
                 .subscribeOn(Schedulers.io())
+                .retry(2)
                 .map(new Function<String, Map<String, Downloader>>() {
                     @Override
                     public Map<String, Downloader> apply(String s) throws Exception {
@@ -102,6 +84,7 @@ public class JDownloaderManager {
                             public void accept(Map<String, Downloader> dMap) throws Exception {
                                 downloaderMap.clear();
                                 downloaderMap.putAll(dMap);
+                                JDownloadLog.d(TAG, "init downloaderMap, size:" + downloaderMap.size());
                             }
                         },
                         new Consumer<Throwable>() {
@@ -117,30 +100,30 @@ public class JDownloaderManager {
      * 添加一个下载任务
      *
      * @param context  上下文
-     * @param url      下载地址
-     * @param listener 下载监听
+     * @param url      下载地址，不可为空
+     * @param listener 下载监听，可以为空
      */
-    public void addDownloader(Context context, String url, DownloaderListener listener) {
+    public void addNewDownloader(Context context, String url, DownloaderListener listener) {
         DownloaderInfo info = new DownloaderInfo(context.getApplicationContext(), url, listener);
-        addDownloader(info);
+        addNewDownloader(info);
     }
 
     /**
      * 添加一个下载任务
      *
-     * @param info 下载信息
+     * @param info 下载信息，不可为空
      */
-    public void addDownloader(DownloaderInfo info) {
-        addDownloader(info, null);
+    public void addNewDownloader(DownloaderInfo info) {
+        addNewDownloader(info, null);
     }
 
     /**
      * 添加一个下载任务
      *
-     * @param info       下载信息
+     * @param info       下载信息，不可为空
      * @param httpOption http相关信息
      */
-    public void addDownloader(final DownloaderInfo info, HttpOption httpOption) {
+    public void addNewDownloader(final DownloaderInfo info, HttpOption httpOption) {
         if (downloaderMap.containsKey(info.getUrl())) {
             //如果已经存在了，将info中不是数据库字段的值赋给已存在的Downloader中
             Downloader d = getDownloader(info.getUrl());
@@ -206,10 +189,13 @@ public class JDownloaderManager {
     public void startAll() {
         for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
             Downloader downloader = entry.getValue();
-            if (downloader != null &&
-                    (downloader.getState() == Downloader.STATE_PAUSED)) {
-                downloader.setState(Downloader.STATE_PENDING);
-                downloader.setReason(Downloader.STATE_PENDING);
+            if (downloader != null) {
+                if (getDownloadingCount() >= downloadPool) {
+                    downloader.setState(Downloader.STATE_PENDING);
+                    downloader.setReason(Downloader.STATE_PENDING);
+                } else {
+                    downloader.start();
+                }
             }
         }
         fit();
@@ -294,6 +280,15 @@ public class JDownloaderManager {
     }
 
     /**
+     * 获取所有下载器
+     *
+     * @return Map<String, Downloader>
+     */
+    public Map<String, Downloader> getDownloaderMap() {
+        return downloaderMap;
+    }
+
+    /**
      * 根据url获取Downloader
      *
      * @param url 下载地址
@@ -301,6 +296,22 @@ public class JDownloaderManager {
      */
     public Downloader getDownloader(String url) {
         return downloaderMap.get(url);
+    }
+
+    /**
+     * 获取正在下载的个数
+     *
+     * @return 正在下载的个数或者0
+     */
+    public int getDownloadingCount() {
+        int count = 0;
+        for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
+            Downloader downloader = entry.getValue();
+            if (downloader != null && downloader.isRunning()) {
+                count++;
+            }
+        }
+        return count;
     }
 
     /**
@@ -328,19 +339,34 @@ public class JDownloaderManager {
     }
 
     /**
-     * 获取正在下载的个数
+     * 移除指定下载任务
      *
-     * @return 正在下载的个数或者0
+     * @param url        下载地址
+     * @param deleteFile 是否同时删除下载的文件
+     * @return 移除的Downloader or null
      */
-    public int getDownloadingCount() {
-        int count = 0;
-        for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
-            Downloader downloader = entry.getValue();
-            if (downloader != null && downloader.isRunning()) {
-                count++;
+    public Downloader remove(String url, boolean deleteFile) {
+        Downloader d = downloaderMap.remove(url);
+        if (d != null) {
+            d.deleteRecord();
+            if (deleteFile) {
+                d.deleteFile();
             }
         }
-        return count;
+        return d;
+    }
+
+    /**
+     * 移除指定下载任务
+     *
+     * @param url        下载地址
+     * @param deleteFile 是否同时删除下载的文件
+     */
+    public void removeAll(String url, boolean deleteFile) {
+        while (!downloaderMap.isEmpty()) {
+            remove(url, deleteFile);
+            JDownloadLog.d(TAG, "remove downloader, url:" + url + ", deleteFile:" + deleteFile + ", map size:" + downloaderMap.size());
+        }
     }
 
     /**
@@ -353,5 +379,42 @@ public class JDownloaderManager {
         JDownloadLog.enableLog(debug);
 
         Log.d(TAG, "JDownloader debug:" + debug);
+    }
+
+    /**
+     * 通过key来获取downloader，然后根据时间来排序
+     */
+    private class ValueComparator implements Comparator<String> {
+        private Map<String, Downloader> base;
+
+        //这里需要将要比较的map集合传进来
+        ValueComparator(Map<String, Downloader> base) {
+            this.base = base;
+        }
+
+        //比较的时候，传入的两个参数应该是map的两个key，根据上面传入的要比较的集合base，
+        //可以获取到key对应的value，然后按照value进行比较
+        public int compare(String o1, String o2) {
+            if (base == null) {
+                return 0;
+            }
+            Downloader d1 = base.get(o1);
+            Downloader d2 = base.get(o2);
+            if (d1 == null || d2 == null) {
+                return 0;
+            }
+            try {
+                long d1Time = Long.parseLong(d1.getDownloaderInfo().getAddTimestamp());
+                long d2Time = Long.parseLong(d2.getDownloaderInfo().getAddTimestamp());
+
+                return d1Time > d2Time ? 1 : 0;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                JDownloadLog.e(TAG, "Exception e:" + e.getMessage());
+            }
+
+            return 0;
+        }
     }
 }

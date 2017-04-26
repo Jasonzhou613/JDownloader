@@ -2,6 +2,7 @@ package com.ttsea.downloader.download;
 
 
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 
 import com.ttsea.downloader.exception.DownloadException;
@@ -36,110 +37,109 @@ class DownloadSubscriber<T> implements Observer<T>, DownloaderListener {
     public DownloadSubscriber(DownloaderInfo info) {
         this.downloaderInfo = info;
 
-        progressHandler = new ProgressHandler(this);
+        if (Looper.myLooper() == null) {
+            Looper.prepare();
+        }
+        progressHandler = new ProgressHandler(DownloadSubscriber.this);
     }
 
     @Override
     public void onPending() {
-        if (downloaderInfo.getDownloaderListener() != null) {
-            new ChangeToMainThread() {
-                @Override
-                void changeComplete() {
-                    JDownloadLog.d(TAG, "onPending, threadName:" + Thread.currentThread().getName());
+        new ChangeToMainThread() {
+            @Override
+            void changeComplete() {
+                if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onPending();
                 }
-            };
-        }
-        progressHandler.startSendMessage();
+                progressHandler.startSendMessage();
+            }
+        };
     }
 
     @Override
     public void onLinking() {
-        if (downloaderInfo.getDownloaderListener() != null) {
-            new ChangeToMainThread() {
-                @Override
-                void changeComplete() {
-                    JDownloadLog.d(TAG, "onLinking, threadName:" + Thread.currentThread().getName());
+        new ChangeToMainThread() {
+            @Override
+            void changeComplete() {
+                if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onLinking();
                 }
-            };
-        }
-        progressHandler.startSendMessage();
+                progressHandler.startSendMessage();
+            }
+        };
     }
 
     @Override
     public void onStart() {
-        if (downloaderInfo.getDownloaderListener() != null) {
-            new ChangeToMainThread() {
-                @Override
-                void changeComplete() {
-                    JDownloadLog.d(TAG, "onStart, threadName:" + Thread.currentThread().getName());
+        new ChangeToMainThread() {
+            @Override
+            void changeComplete() {
+                if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onStart();
                 }
-            };
-        }
-        progressHandler.startSendMessage();
+                progressHandler.startSendMessage();
+            }
+        };
     }
 
     /** 开始订阅 */
     @Override
-    public void onSubscribe(Disposable d) {
-        disposable = d;
-        if (downloaderInfo.getDownloaderListener() != null) {
-            new ChangeToMainThread() {
-                @Override
-                void changeComplete() {
-                    JDownloadLog.d(TAG, "onSubscribe, threadName:" + Thread.currentThread().getName());
+    public void onSubscribe(final Disposable d) {
+        new ChangeToMainThread() {
+            @Override
+            void changeComplete() {
+                if (downloaderInfo.getDownloaderListener() != null) {
                     //这里不用调用onStart方法，已经在Downloader中调用了
                     //downloaderInfo.getDownloaderListener().onStart();
                 }
-            };
-        }
-        progressHandler.startSendMessage();
+                disposable = d;
+                progressHandler.startSendMessage();
+            }
+        };
     }
 
     @Override
     public void onPause(final int reason) {
-        progressHandler.stopSendMessage();
-        if (downloaderInfo.getDownloaderListener() != null) {
-            new ChangeToMainThread() {
-                @Override
-                void changeComplete() {
-                    JDownloadLog.d(TAG, "onPause, threadName:" + Thread.currentThread().getName());
+        new ChangeToMainThread() {
+            @Override
+            void changeComplete() {
+                progressHandler.stopSendMessage();
+
+                if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onPause(reason);
                 }
-            };
-        }
+            }
+        };
     }
 
     @Override
     public void onCancel(final int reason) {
-        progressHandler.stopSendMessage();
-        if (downloaderInfo.getDownloaderListener() != null) {
-            new ChangeToMainThread() {
-                @Override
-                void changeComplete() {
-                    JDownloadLog.d(TAG, "onCancel, threadName:" + Thread.currentThread().getName());
+        new ChangeToMainThread() {
+            @Override
+            void changeComplete() {
+                progressHandler.stopSendMessage();
+
+                if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onCancel(reason);
                 }
-            };
-        }
+            }
+        };
     }
 
     @Override
     public void onDownloading(final long hasReadLength, final long needReadLength, long speedBytePerSec) {
         synchronized (needUpdateUI) {
             if (needUpdateUI.needUpdateUI) {
-                if (downloaderInfo.getDownloaderListener() != null) {
-                    new ChangeToMainThread() {
-                        @Override
-                        void changeComplete() {
-                            JDownloadLog.d(TAG, "onDownloading... threadName:" + Thread.currentThread().getName());
+                new ChangeToMainThread() {
+                    @Override
+                    void changeComplete() {
+                        if (downloaderInfo.getDownloaderListener() != null) {
                             downloaderInfo.getDownloaderListener().onDownloading(hasReadLength, needReadLength, hasReadLength - lastHasReadLength);
                             lastHasReadLength = hasReadLength;
                         }
-                    };
-                }
+                    }
+                };
+
                 needUpdateUI.needUpdateUI = false;
             }
         }
@@ -152,45 +152,45 @@ class DownloadSubscriber<T> implements Observer<T>, DownloaderListener {
 
     @Override
     public void onError(final Throwable e) {
-        if (downloaderInfo.getDownloaderListener() != null) {
-            new ChangeToMainThread() {
-                @Override
-                void changeComplete() {
+        new ChangeToMainThread() {
+            @Override
+            void changeComplete() {
+                if (downloaderInfo.getDownloaderListener() != null) {
                     if (e instanceof DownloadException) {
                         DownloadException de = (DownloadException) e;
                         if (de.getState() == Downloader.STATE_PAUSED) {
-                            JDownloadLog.d(TAG, "onPause, threadName:" + Thread.currentThread().getName());
                             downloaderInfo.getDownloaderListener().onPause(de.getReason());
+
                         } else if (de.getState() == Downloader.STATE_CANCEL) {
-                            JDownloadLog.d(TAG, "onCancel, threadName:" + Thread.currentThread().getName());
                             downloaderInfo.getDownloaderListener().onCancel(de.getReason());
+
                         } else {
-                            JDownloadLog.d(TAG, "onError, threadName:" + Thread.currentThread().getName());
                             downloaderInfo.getDownloaderListener().onError(de);
+
                         }
                     } else {
-                        JDownloadLog.d(TAG, "onError, threadName:" + Thread.currentThread().getName());
                         downloaderInfo.getDownloaderListener().onError(e);
                     }
                 }
-            };
-        }
-        progressHandler.stopSendMessage();
+
+                progressHandler.stopSendMessage();
+            }
+        };
     }
 
     @Override
     public void onComplete() {
-        if (downloaderInfo.getDownloaderListener() != null) {
-            new ChangeToMainThread() {
-                @Override
-                void changeComplete() {
-                    JDownloadLog.d(TAG, "onComplete, threadName:" + Thread.currentThread().getName());
+        new ChangeToMainThread() {
+            @Override
+            void changeComplete() {
+                if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onComplete();
+                    //下载完后要自动适配下载管理器
                     JDownloaderManager.getInstance(downloaderInfo.getContext()).fit();
                 }
-            };
-        }
-        progressHandler.stopSendMessage();
+                progressHandler.stopSendMessage();
+            }
+        };
     }
 
     public Disposable getDisposable() {

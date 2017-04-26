@@ -565,6 +565,7 @@ public class Downloader implements TaskHandler {
      * @return 删除的记录条数
      */
     public long deleteRecord() {
+        downloaderInfo.setHasReadLength(0);
         return DownloadDBHelper.deleteRecord(downloaderInfo.getContext(), downloaderInfo.getUrl());
     }
 

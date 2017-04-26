@@ -26,7 +26,7 @@ class DBConstants {
 
         for (int i = 0; i < sqls.length; i++) {
             String sql = sqls[0];
-            JDownloadLog.d(TAG, "begin create table" + i + "，sql=" + sql);
+            JDownloadLog.d(TAG, "begin create table" + i + ", sql=" + sql);
             db.execSQL(sql);
             JDownloadLog.d(TAG, "end create table");
         }
