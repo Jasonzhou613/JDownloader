@@ -12,7 +12,14 @@
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="10dip"
+        android:layout_marginTop="5dp"
         android:indeterminate="false"/>
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -24,7 +31,7 @@
             android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
-            android:text="开始下载"/>
+            android:text="开始"/>
 
         <View
             android:layout_width="20dp"
@@ -37,42 +44,20 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
             android:text="取消"/>
+
+        <View
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:background="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/btnDelete"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="删除"/>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvFileName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dip"
-        android:text="文件名"/>
-
-    <ScrollView
-        android:id="@+id/scInfoView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tvInfo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dip"
-                android:text="信息"/>
-
-            <TextView
-                android:id="@+id/bottomView"
-                android:layout_width="match_parent"
-                android:layout_height="80dp"
-                android:visibility="gone"/>
-
-        </LinearLayout>
-
-
-    </ScrollView>
 </LinearLayout>
 
 

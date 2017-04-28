@@ -595,6 +595,11 @@ public class Downloader implements TaskHandler {
         return false;
     }
 
+    /** 获取下载地址 */
+    public String getUrl() {
+        return downloaderInfo.getUrl();
+    }
+
     /** 获取Downloader状态 */
     public int getState() {
         return downloaderInfo.getState();

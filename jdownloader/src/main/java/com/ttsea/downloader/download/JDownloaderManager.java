@@ -138,9 +138,10 @@ public class JDownloaderManager {
         } else {
             Downloader downloader = new Downloader(info, httpOption);
             downloaderMap.put(info.getUrl(), downloader);
+            JDownloadLog.d(TAG, "add a new downloader url:" + info.getUrl());
         }
 
-        fit();
+        //fit();
     }
 
     /**
@@ -359,13 +360,16 @@ public class JDownloaderManager {
     /**
      * 移除指定下载任务
      *
-     * @param url        下载地址
      * @param deleteFile 是否同时删除下载的文件
      */
-    public void removeAll(String url, boolean deleteFile) {
-        while (!downloaderMap.isEmpty()) {
-            remove(url, deleteFile);
-            JDownloadLog.d(TAG, "remove downloader, url:" + url + ", deleteFile:" + deleteFile + ", map size:" + downloaderMap.size());
+    public void removeAll(boolean deleteFile) {
+        for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
+            Downloader downloader = entry.getValue();
+            if (downloader != null) {
+                String url = downloader.getDownloaderInfo().getUrl();
+                remove(url, deleteFile);
+                JDownloadLog.d(TAG, "remove downloader, url:" + url + ", deleteFile:" + deleteFile + ", map size:" + downloaderMap.size());
+            }
         }
     }
 
