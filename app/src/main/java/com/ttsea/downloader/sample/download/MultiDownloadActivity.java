@@ -4,7 +4,9 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -15,6 +17,8 @@ import android.widget.Toast;
 import com.ttsea.downloader.download.Downloader;
 import com.ttsea.downloader.download.JDownloaderManager;
 import com.ttsea.downloader.sample.R;
+
+import java.util.Map;
 
 
 /**
@@ -71,8 +75,15 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
         btnCancelAll.setOnClickListener(this);
         btnDeleteAll.setOnClickListener(this);
 
+        etUrl.setText(urls[0]);
+
+        LinearLayoutManager manager = new LinearLayoutManager(this);
+        rcList.setLayoutManager(manager);
+        ((SimpleItemAnimator) rcList.getItemAnimator()).setSupportsChangeAnimations(false);
         mAdapter = new DownloaderAdapter(this, JDownloaderManager.getInstance(this).getDownloaderMap());
         rcList.setAdapter(mAdapter);
+
+        bindDefaultListener();
     }
 
     @Override
@@ -88,14 +99,17 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
 
             case R.id.btnStartAll://开始全部下载任务
                 JDownloaderManager.getInstance(this).startAll();
+                mAdapter.notifyDataSetChanged2();
                 break;
 
             case R.id.btnPauseAll://暂停全部下载任务
                 JDownloaderManager.getInstance(this).pauseAll(Downloader.PAUSED_HUMAN);
+                mAdapter.notifyDataSetChanged2();
                 break;
 
             case R.id.btnCancelAll://取消全部下载任务
                 JDownloaderManager.getInstance(this).cancelAll(Downloader.ERROR_HUMAN);
+                mAdapter.notifyDataSetChanged2();
                 break;
 
             case R.id.btnDeleteAll://删除所有下载任务
@@ -104,6 +118,19 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
 
             default:
                 break;
+        }
+    }
+
+    private void bindDefaultListener() {
+        Map<String, Downloader> map = JDownloaderManager.getInstance(this).getDownloaderMap();
+        if (map == null) {
+            return;
+        }
+        for (Map.Entry<String, Downloader> entry : map.entrySet()) {
+            Downloader d = entry.getValue();
+            if (d != null) {
+                d.getDownloaderInfo().setDownloaderListener(new DListener(mAdapter, d.getUrl()));
+            }
         }
     }
 
@@ -122,13 +149,14 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
             Toast.makeText(this, "下载地址不能为空", Toast.LENGTH_SHORT).show();
             return;
         }
+
         if (JDownloaderManager.getInstance(this).getDownloaderMap().containsKey(url)) {
             Toast.makeText(this, "任务已存在，url:" + url, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        JDownloaderManager.getInstance(this).addNewDownloader(this, url, null);
-        mAdapter.notifyDataSetChanged();
+        JDownloaderManager.getInstance(this).addNewDownloader(this, url, new DListener(mAdapter, url));
+        mAdapter.notifyDataSetChanged2();
     }
 
     private void deleteAll() {
@@ -144,7 +172,8 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         boolean deleteFile = cbDeleteFile.isChecked();
-                        JDownloaderManager.getInstance(MultiDownloadActivity.this).removeAll(deleteFile);
+                        JDownloaderManager.getInstance(MultiDownloadActivity.this).deleteAll(deleteFile);
+                        mAdapter.notifyDataSetChanged2();
                     }
                 })
                 .setNegativeButton("取消", new DialogInterface.OnClickListener() {

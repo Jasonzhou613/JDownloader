@@ -133,7 +133,7 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
                 if (downloader == null) {
                     break;
                 }
-                JDownloaderManager.getInstance(this).remove(downloadUrl, true);
+                JDownloaderManager.getInstance(this).delete(downloadUrl, true);
 
                 stringBuilder = new StringBuilder("");
                 updateProgress(downloader.getDownloaderInfo());

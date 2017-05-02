@@ -38,6 +38,8 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
 
     public DownloaderAdapter(Context context, Map<String, Downloader> downloaderMap) {
         this.mContext = context;
+        this.mInflater = LayoutInflater.from(mContext);
+
         map2List(downloaderMap);
     }
 
@@ -53,38 +55,43 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
         final DownloaderInfo info = downloader.getDownloaderInfo();
 
         switch (downloader.getState()) {
+
+            case Downloader.STATE_PENDING:
+                holder.tvStatus.setText("等待下载...");
+                holder.btnDownload.setText("暂停");
+                break;
             case Downloader.STATE_LINKING:
-                holder.tvStatus.setText("正在连接...\n" + getFileInfo(info));
+                holder.tvStatus.setText("正在连接...");
                 holder.btnDownload.setText("暂停");
                 break;
 
             case Downloader.STATE_START:
-                holder.tvStatus.setText("开始下载...\n" + getFileInfo(info));
+                holder.tvStatus.setText("开始下载...");
                 holder.btnDownload.setText("暂停");
                 break;
 
             case Downloader.STATE_DOWNLOADING:
-                holder.tvStatus.setText("正在下载...\n" + getFileInfo(info));
+                holder.tvStatus.setText("正在下载...");
                 holder.btnDownload.setText("暂停");
                 break;
 
             case Downloader.STATE_PAUSED:
-                holder.tvStatus.setText("已暂停\n" + getFileInfo(info));
+                holder.tvStatus.setText("已暂停");
                 holder.btnDownload.setText("开始");
                 break;
 
             case Downloader.STATE_CANCEL:
-                holder.tvStatus.setText("已取消\n" + getFileInfo(info));
+                holder.tvStatus.setText("已取消");
                 holder.btnDownload.setText("开始");
                 break;
 
             case Downloader.STATE_SUCCESSFUL:
-                holder.tvStatus.setText("已完成\n" + getFileInfo(info));
+                holder.tvStatus.setText("已完成");
                 holder.btnDownload.setText("已完成");
                 break;
 
             case Downloader.STATE_FAILED:
-                holder.tvStatus.setText("下载失败\n" + getFileInfo(info));
+                holder.tvStatus.setText("下载失败");
                 holder.btnDownload.setText("重新开始");
                 break;
 
@@ -92,25 +99,27 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
                 break;
         }
 
+        holder.tvInfo.setText(getFileInfo(info));
+
         long needReadLength = info.getNeedReadLength();
         long hasReadLength = info.getHasReadLength();
 
         if (hasReadLength < 1 || needReadLength < 1) {
             holder.pb.setMax(1);
             holder.pb.setProgress(0);
-            return;
-        }
-        final int max, progress;
-        int rate = 10000;
-        if (needReadLength > Integer.MAX_VALUE - 1) {
-            max = (int) (needReadLength / rate);
-            progress = (int) (hasReadLength / rate);
         } else {
-            max = (int) needReadLength;
-            progress = (int) hasReadLength;
+            final int max, progress;
+            int rate = 10000;
+            if (needReadLength > Integer.MAX_VALUE - 1) {
+                max = (int) (needReadLength / rate);
+                progress = (int) (hasReadLength / rate);
+            } else {
+                max = (int) needReadLength;
+                progress = (int) hasReadLength;
+            }
+            holder.pb.setMax(max);
+            holder.pb.setProgress(progress);
         }
-        holder.pb.setMax(max);
-        holder.pb.setProgress(progress);
 
         holder.btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -180,7 +189,9 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         boolean deleteFile = cbDeleteFile.isChecked();
-                        JDownloaderManager.getInstance(mContext).remove(url, deleteFile);
+                        Downloader d = JDownloaderManager.getInstance(mContext).delete(url, deleteFile);
+                        mList.remove(d);
+                        notifyDataSetChanged();
                     }
                 })
                 .setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -199,6 +210,22 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
         notifyDataSetChanged();
     }
 
+    public void notifyDataSetChanged2() {
+        map2List(JDownloaderManager.getInstance(mContext).getDownloaderMap());
+        notifyDataSetChanged();
+    }
+
+    public void notifyItemChanged(String url) {
+        Downloader d = JDownloaderManager.getInstance(mContext).getDownloader(url);
+        if (d == null) {
+            return;
+        }
+        int position = mList.indexOf(d);
+        if (position != -1) {
+            notifyItemChanged(position);
+        }
+    }
+
     private void map2List(Map<String, Downloader> map) {
         if (mList == null) {
             mList = new ArrayList<>();
@@ -215,6 +242,7 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
     static class ViewHolder extends RecyclerView.ViewHolder {
         private ProgressBar pb;
         private TextView tvStatus;
+        private TextView tvInfo;
         private Button btnDownload;
         private Button btnCancel;
         private Button btnDelete;
@@ -223,6 +251,7 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
             super(itemView);
             pb = (ProgressBar) itemView.findViewById(R.id.pb);
             tvStatus = (TextView) itemView.findViewById(R.id.tvStatus);
+            tvInfo = (TextView) itemView.findViewById(R.id.tvInfo);
             btnDownload = (Button) itemView.findViewById(R.id.btnDownload);
             btnCancel = (Button) itemView.findViewById(R.id.btnCancel);
             btnDelete = (Button) itemView.findViewById(R.id.btnDelete);

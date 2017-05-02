@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -57,7 +58,7 @@ public class JDownloaderManager {
      * @param context 上下文
      */
     private void init(final Context context) {
-        downloaderMap = new TreeMap<String, Downloader>(new ValueComparator(downloaderMap));
+        downloaderMap = new ConcurrentHashMap<String, Downloader>();
 
         Observable.just("")
                 .subscribeOn(Schedulers.io())
@@ -139,9 +140,10 @@ public class JDownloaderManager {
             Downloader downloader = new Downloader(info, httpOption);
             downloaderMap.put(info.getUrl(), downloader);
             JDownloadLog.d(TAG, "add a new downloader url:" + info.getUrl());
+            JDownloadLog.d(TAG, "size:" + downloaderMap.size());
         }
 
-        //fit();
+        fit();
     }
 
     /**
@@ -340,13 +342,13 @@ public class JDownloaderManager {
     }
 
     /**
-     * 移除指定下载任务
+     * 删除指定下载任务
      *
      * @param url        下载地址
      * @param deleteFile 是否同时删除下载的文件
      * @return 移除的Downloader or null
      */
-    public Downloader remove(String url, boolean deleteFile) {
+    public Downloader delete(String url, boolean deleteFile) {
         Downloader d = downloaderMap.remove(url);
         if (d != null) {
             d.deleteRecord();
@@ -358,17 +360,17 @@ public class JDownloaderManager {
     }
 
     /**
-     * 移除指定下载任务
+     * 删除指定下载任务
      *
      * @param deleteFile 是否同时删除下载的文件
      */
-    public void removeAll(boolean deleteFile) {
+    public void deleteAll(boolean deleteFile) {
         for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
             Downloader downloader = entry.getValue();
             if (downloader != null) {
                 String url = downloader.getDownloaderInfo().getUrl();
-                remove(url, deleteFile);
-                JDownloadLog.d(TAG, "remove downloader, url:" + url + ", deleteFile:" + deleteFile + ", map size:" + downloaderMap.size());
+                delete(url, deleteFile);
+                JDownloadLog.d(TAG, "remove downloader, url:" + url + ", deleteFile:" + deleteFile + ", size:" + downloaderMap.size());
             }
         }
     }
