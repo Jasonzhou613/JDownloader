@@ -9,8 +9,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import okhttp3.MediaType;
@@ -127,12 +129,11 @@ public class Downloader implements TaskHandler {
                 //下载完成设置状态
                 setState(Downloader.STATE_SUCCESSFUL);
                 setReason(Downloader.STATE_SUCCESSFUL);
-                //计算文件的md5
-                String fileMd5 = MD5Utils.getFileMD5(new File(downloaderInfo.getSaveFilePath(), downloaderInfo.getFileName()));
-                downloaderInfo.setFileMd5(fileMd5);
+
                 //保存下载信息
                 saveDownloadInfo();
-                JDownloadLog.d(TAG, "file md5: " + fileMd5);
+                //更新文件md5
+                updateFileMD5();
                 super.onComplete();
             }
         };
@@ -228,7 +229,8 @@ public class Downloader implements TaskHandler {
                 && downloaderInfo.getContentLength() > 0
                 && downloaderInfo.getNeedReadLength() > 0
                 && downloaderInfo.getNeedReadLength() == downloaderInfo.getHasReadLength()
-                && checkMD5()) {
+            //&& checkMD5()//大文件计算md5太费时，这里先忽略md5校验
+                ) {
 
             JDownloadLog.d(TAG, "downloader already completed.");
             setState(Downloader.STATE_SUCCESSFUL);
@@ -536,6 +538,39 @@ public class Downloader implements TaskHandler {
         } else if (isFileExists) {
             file.delete();
         }
+    }
+
+    /** 更新文件的md5 */
+    private void updateFileMD5() {
+        File file = new File(downloaderInfo.getSaveFilePath(), downloaderInfo.getFileName());
+
+        Observable.just(file)
+                .subscribeOn(Schedulers.io())
+                .map(new Function<File, String>() {
+                    @Override
+                    public String apply(File f) throws Exception {
+                        return MD5Utils.getFileMD5(f);
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        new Consumer<String>() {
+                            @Override
+                            public void accept(String s) throws Exception {
+                                JDownloadLog.d(TAG, "file md5: " + s);
+                                if (downloaderInfo.getState() == Downloader.STATE_SUCCESSFUL
+                                        && !Utils.isEmpty(s)) {
+                                    downloaderInfo.setFileMd5(s);
+                                    saveDownloadInfo();
+                                }
+                            }
+                        },
+                        new Consumer<Throwable>() {
+                            @Override
+                            public void accept(Throwable e) throws Exception {
+                                JDownloadLog.e(TAG, "Throwable e:" + e.getMessage());
+                            }
+                        });
     }
 
     /** 保存下载信息 */

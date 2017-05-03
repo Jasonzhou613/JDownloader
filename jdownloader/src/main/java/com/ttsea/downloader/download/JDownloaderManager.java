@@ -223,7 +223,7 @@ public class JDownloaderManager {
     }
 
     /**
-     * 暂停所有的下载任务
+     * 暂停所有等待下载或者正在下载的任务
      *
      * @param reason 暂停原因<br>
      *               {@link Downloader#PAUSED_WAITING_FOR_NETWORK},
@@ -235,7 +235,9 @@ public class JDownloaderManager {
         for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
             Downloader downloader = entry.getValue();
             if (downloader != null) {
-                downloader.pause(reason);
+                if ((downloader.getState() == Downloader.STATE_PENDING || downloader.isRunning())) {
+                    downloader.pause(reason);
+                }
             }
         }
     }
@@ -262,7 +264,7 @@ public class JDownloaderManager {
     }
 
     /**
-     * 取消所有下载任务
+     * 取消所有等待下载或者正在下载的任务
      *
      * @param reason 取消下载原因<br>
      *               {@link Downloader#ERROR_UNKNOWN},
@@ -277,7 +279,9 @@ public class JDownloaderManager {
         for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
             Downloader downloader = entry.getValue();
             if (downloader != null) {
-                downloader.cancel(reason);
+                if ((downloader.getState() == Downloader.STATE_PENDING || downloader.isRunning())) {
+                    downloader.cancel(reason);
+                }
             }
         }
     }

@@ -87,6 +87,38 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //因JDownloaderManager.getInstance是静态的，JDownloaderManager实例会持有downloader
+        //而downloader会持有DownloaderInfo，DownloaderInfo又会持有downloaderListener
+        //所以在activity退出时，需要解除他们的关系，防止该activity不被释放
+        unBindListener();
+    }
+
+    private void bindDefaultListener() {
+        Map<String, Downloader> map = JDownloaderManager.getInstance(this).getDownloaderMap();
+        if (map == null) {
+            return;
+        }
+        for (Map.Entry<String, Downloader> entry : map.entrySet()) {
+            Downloader d = entry.getValue();
+            if (d != null) {
+                d.getDownloaderInfo().setDownloaderListener(new DListener(mAdapter, d.getUrl()));
+            }
+        }
+    }
+
+    private void unBindListener() {
+        Map<String, Downloader> map = JDownloaderManager.getInstance(this).getDownloaderMap();
+        for (Map.Entry<String, Downloader> entry : map.entrySet()) {
+            Downloader d = entry.getValue();
+            if (d != null) {
+                d.getDownloaderInfo().setDownloaderListener(null);
+            }
+        }
+    }
+
+    @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btnAddCustom://添加一个自定义的下载任务
@@ -118,19 +150,6 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
 
             default:
                 break;
-        }
-    }
-
-    private void bindDefaultListener() {
-        Map<String, Downloader> map = JDownloaderManager.getInstance(this).getDownloaderMap();
-        if (map == null) {
-            return;
-        }
-        for (Map.Entry<String, Downloader> entry : map.entrySet()) {
-            Downloader d = entry.getValue();
-            if (d != null) {
-                d.getDownloaderInfo().setDownloaderListener(new DListener(mAdapter, d.getUrl()));
-            }
         }
     }
 
@@ -183,7 +202,8 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
                     }
                 });
 
-        alert.create();
-        alert.show();
+        AlertDialog dialog = alert.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 }

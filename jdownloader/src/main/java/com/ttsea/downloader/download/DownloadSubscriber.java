@@ -108,6 +108,9 @@ class DownloadSubscriber<T> implements Observer<T>, DownloaderListener {
                 if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onPause(reason);
                 }
+
+                //暂停后，自动适配下载管理器
+                JDownloaderManager.getInstance(downloaderInfo.getContext()).fit();
             }
         };
     }
@@ -122,6 +125,9 @@ class DownloadSubscriber<T> implements Observer<T>, DownloaderListener {
                 if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onCancel(reason);
                 }
+
+                //取消后，自动适配下载管理器
+                JDownloaderManager.getInstance(downloaderInfo.getContext()).fit();
             }
         };
     }
@@ -172,7 +178,8 @@ class DownloadSubscriber<T> implements Observer<T>, DownloaderListener {
                         downloaderInfo.getDownloaderListener().onError(e);
                     }
                 }
-
+                //下载失败后，自动适配下载管理器
+                JDownloaderManager.getInstance(downloaderInfo.getContext()).fit();
                 progressHandler.stopSendMessage();
             }
         };
@@ -185,10 +192,10 @@ class DownloadSubscriber<T> implements Observer<T>, DownloaderListener {
             void changeComplete() {
                 if (downloaderInfo.getDownloaderListener() != null) {
                     downloaderInfo.getDownloaderListener().onComplete();
-                    //下载完后要自动适配下载管理器
-                    JDownloaderManager.getInstance(downloaderInfo.getContext()).fit();
                 }
                 progressHandler.stopSendMessage();
+                //下载完后要自动适配下载管理器
+                JDownloaderManager.getInstance(downloaderInfo.getContext()).fit();
             }
         };
     }

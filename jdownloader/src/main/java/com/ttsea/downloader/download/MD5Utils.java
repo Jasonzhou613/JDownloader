@@ -6,11 +6,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 /**
  * // to do <br>
@@ -21,36 +19,53 @@ import java.util.Arrays;
  * <b>version:</b> 1.0 <br>
  */
 class MD5Utils {
-    private static final char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            'a', 'b', 'c', 'd', 'e', 'f'};
-
     /**
      * Get MD5 of a file (lower case)
      *
-     * @return empty string if I/O error when get MD5
+     * @return md5 or null string if I/O error when get MD5
      */
-    @NonNull
     public static String getFileMD5(@NonNull File file) {
-        FileInputStream in = null;
-
+        // 缓冲区大小（这个可以抽出一个参数）
+        int bufferSize = 256 * 1024;
+        FileInputStream fileInputStream = null;
+        DigestInputStream digestInputStream = null;
         try {
-            in = new FileInputStream(file);
-            FileChannel ch = in.getChannel();
-            return MD5(ch.map(FileChannel.MapMode.READ_ONLY, 0, file.length()));
+            // 拿到一个MD5转换器（同样，这里可以换成SHA1）
+            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            // 使用DigestInputStream
+            fileInputStream = new FileInputStream(file);
+            digestInputStream = new DigestInputStream(fileInputStream, messageDigest);
+            // read的过程中进行MD5处理，直到读完文件
+            byte[] buffer = new byte[bufferSize];
+            while (digestInputStream.read(buffer) > 0)
+                ;
+            // 获取最终的MessageDigest
+            messageDigest = digestInputStream.getMessageDigest();
+            // 拿到结果，也是字节数组，包含16个元素
+            byte[] resultByteArray = messageDigest.digest();
+
+            // 把字节数组转换成字符串
+            return byteArrayToHex(resultByteArray);
+
+        } catch (NoSuchAlgorithmException e) {
+            return null;
 
         } catch (FileNotFoundException e) {
-            return "";
+            return null;
 
         } catch (IOException e) {
-            return "";
+            return null;
 
         } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    // 关闭流产生的错误一般都可以忽略
+            try {
+                if (digestInputStream != null) {
+                    digestInputStream.close();
                 }
+                if (fileInputStream != null) {
+                    fileInputStream.close();
+                }
+            } catch (Exception e) {
+                e.getMessage();
             }
         }
     }
@@ -59,87 +74,43 @@ class MD5Utils {
      * MD5校验字符串
      *
      * @param s String to be MD5
-     * @return 'null' if cannot get MessageDigest
+     * @return md5 string or null if cannot get MessageDigest
      */
-    @NonNull
-    private static String getStringMD5(@NonNull String s) {
-        MessageDigest mdInst;
+    public static String stringMD5(String s) {
         try {
-            // 获得MD5摘要算法的 MessageDigest 对象
-            mdInst = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return "";
-        }
+            // 拿到一个MD5转换器（如果想要SHA1参数换成”SHA1”）
+            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            // 输入的字符串转换成字节数组
+            byte[] inputByteArray = s.getBytes();
+            // inputByteArray是输入字符串转换得到的字节数组
+            messageDigest.update(inputByteArray);
+            // 转换并返回结果，也是字节数组，包含16个元素
+            byte[] resultByteArray = messageDigest.digest();
 
-        byte[] btInput = s.getBytes();
-        // 使用指定的字节更新摘要
-        mdInst.update(btInput);
-        // 获得密文
-        byte[] md = mdInst.digest();
-        // 把密文转换成十六进制的字符串形式
-        int length = md.length;
-        char str[] = new char[length * 2];
-        int k = 0;
-        for (byte b : md) {
-            str[k++] = hexDigits[b >>> 4 & 0xf];
-            str[k++] = hexDigits[b & 0xf];
-        }
-        return new String(str);
-    }
-
-    @NonNull
-    private static String getSubStr(@NonNull String str, int subNu, char replace) {
-        int length = str.length();
-        if (length > subNu) {
-            str = str.substring(length - subNu, length);
-        } else if (length < subNu) {
-            // NOTE: padding字符填充在字符串的右侧，和服务器的算法是一致的
-            str += createPaddingString(subNu - length, replace);
-        }
-        return str;
-    }
-
-    @NonNull
-    private static String createPaddingString(int n, char pad) {
-        if (n <= 0) {
-            return "";
-        }
-
-        char[] paddingArray = new char[n];
-        Arrays.fill(paddingArray, pad);
-        return new String(paddingArray);
-    }
-
-    /**
-     * 计算MD5校验
-     *
-     * @param buffer
-     * @return 空串，如果无法获得 MessageDigest实例
-     */
-    @NonNull
-    private static String MD5(ByteBuffer buffer) {
-        String s = "";
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(buffer);
-            byte tmp[] = md.digest(); // MD5 的计算结果是一个 128 位的长整数，
-            // 用字节表示就是 16 个字节
-            char str[] = new char[16 * 2]; // 每个字节用 16 进制表示的话，使用两个字符，
-            // 所以表示成 16 进制需要 32 个字符
-            int k = 0; // 表示转换结果中对应的字符位置
-            for (int i = 0; i < 16; i++) { // 从第一个字节开始，对 MD5 的每一个字节
-                // 转换成 16 进制字符的转换
-                byte byte0 = tmp[i]; // 取第 i 个字节
-                str[k++] = hexDigits[byte0 >>> 4 & 0xf]; // 取字节中高 4 位的数字转换, >>>,
-                // 逻辑右移，将符号位一起右移
-                str[k++] = hexDigits[byte0 & 0xf]; // 取字节中低 4 位的数字转换
-            }
-            s = new String(str); // 换后的结果转换为字符串
+            // 字符数组转换成字符串返回
+            return byteArrayToHex(resultByteArray);
 
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            return null;
         }
-        return s;
+    }
+
+    //下面这个函数用于将字节数组换成成16进制的字符串
+    private static String byteArrayToHex(byte[] byteArray) {
+        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+        // new一个字符数组，这个就是用来组成结果字符串的（解释一下：一个byte是八位二进制，也就是2位十六进制字符（2的8次方等于16的2次方））
+        char[] resultCharArray = new char[byteArray.length * 2];
+
+        // 遍历字节数组，通过位运算（位运算效率高），转换成字符放到字符数组中去
+        int index = 0;
+
+        for (byte b : byteArray) {
+            resultCharArray[index++] = hexDigits[b >>> 4 & 0xf];
+            resultCharArray[index++] = hexDigits[b & 0xf];
+        }
+
+        // 字符数组组合成字符串返回
+        return (new String(resultCharArray)).toLowerCase();
     }
 }

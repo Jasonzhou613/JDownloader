@@ -1,9 +1,13 @@
 package com.ttsea.downloader.sample.download;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -83,6 +87,10 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
         downloader.getDownloaderInfo().setDownloaderListener(downloaderListener);
 
         switch (downloader.getState()) {
+            case Downloader.STATE_PENDING:
+                downloaderListener.onPending();
+                break;
+
             case Downloader.STATE_LINKING:
                 downloaderListener.onLinking();
                 break;
@@ -133,17 +141,8 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
                 if (downloader == null) {
                     break;
                 }
-                JDownloaderManager.getInstance(this).delete(downloadUrl, true);
 
-                stringBuilder = new StringBuilder("");
-                updateProgress(downloader.getDownloaderInfo());
-                tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
-                tvInfo.setText(stringBuilder.toString());
-
-                scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
-
-                downloader.getDownloaderInfo().setDownloaderListener(null);
-                downloader = null;
+                delete(downloadUrl);
                 break;
 
             default:
@@ -172,13 +171,53 @@ public class SingleDownloadActivity extends AppCompatActivity implements View.On
         }
     }
 
+    private void delete(final String url) {
+        View view = LayoutInflater.from(this).inflate(R.layout.multi_download_dialog, null);
+        final CheckBox cbDeleteFile = (CheckBox) view.findViewById(R.id.cbDeleteFile);
+
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setTitle(null)
+                .setView(view)
+                .setMessage("是否删除下载任务")
+                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        boolean deleteFile = cbDeleteFile.isChecked();
+                        JDownloaderManager.getInstance(SingleDownloadActivity.this).delete(url, deleteFile);
+
+                        stringBuilder = new StringBuilder("");
+                        updateProgress(downloader.getDownloaderInfo());
+                        tvFileName.setText(getFileInfo(downloader.getDownloaderInfo()));
+                        tvInfo.setText(stringBuilder.toString());
+
+                        scInfoView.fullScroll(ScrollView.FOCUS_DOWN);
+
+                        downloader.getDownloaderInfo().setDownloaderListener(null);
+                        downloader = null;
+                    }
+                })
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+
+        AlertDialog dialog = alert.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        if (downloader != null &&
-//                (downloader.getState() == Downloader.STATE_PENDING || downloader.isRunning())) {
-//            downloader.pause(Downloader.PAUSED_HUMAN);
-//        }
+        if (downloader != null) {
+            //因JDownloaderManager.getInstance是静态的，JDownloaderManager实例会持有downloader
+            //而downloader会持有DownloaderInfo，DownloaderInfo又会持有downloaderListener
+            //所以在activity退出时，需要解除他们的关系，防止该activity不被释放
+            downloader.getDownloaderInfo().setDownloaderListener(null);
+        }
     }
 
     private DownloaderListener downloaderListener = new DownloaderListener() {

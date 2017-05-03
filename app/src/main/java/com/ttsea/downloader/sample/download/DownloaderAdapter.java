@@ -50,7 +50,8 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, final int position) {
+    public void onBindViewHolder(ViewHolder holder, int p) {
+        final int position = holder.getAdapterPosition();
         final Downloader downloader = mList.get(position);
         final DownloaderInfo info = downloader.getDownloaderInfo();
 
@@ -201,8 +202,9 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
                     }
                 });
 
-        alert.create();
-        alert.show();
+        AlertDialog dialog = alert.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 
     public void setData(Map<String, Downloader> map) {
