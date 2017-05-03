@@ -18,7 +18,7 @@ import java.security.NoSuchAlgorithmException;
  * <b>author:</b> Jason <br>
  * <b>version:</b> 1.0 <br>
  */
-class MD5Utils {
+final class MD5Utils {
     /**
      * Get MD5 of a file (lower case)
      *

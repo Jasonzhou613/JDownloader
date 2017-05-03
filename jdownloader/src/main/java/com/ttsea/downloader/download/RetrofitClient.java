@@ -17,7 +17,7 @@ import retrofit2.Retrofit;
  * <b>version:</b> 1.0 <br>
  * <b>last modified date:</b> 2017/2/10 14:23.
  */
-class RetrofitClient {
+final class RetrofitClient {
     private final static String TAG = "RetrofitClient";
     /** Http请求全局变量 */
     private static OkHttpClient okHttpClient;

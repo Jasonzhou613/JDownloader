@@ -141,6 +141,7 @@ public class Downloader implements TaskHandler {
         initState();
     }
 
+    /** 初始化状态 */
     private void initState() {
 
         //首先从数据库里查询出来是否有下载记录
@@ -322,6 +323,7 @@ public class Downloader implements TaskHandler {
         start();
     }
 
+    /** 重设Downloader的状态 */
     private void resetStatus() {
         JDownloadLog.d(TAG, "reset downloader status.");
 
@@ -544,6 +546,7 @@ public class Downloader implements TaskHandler {
     private void updateFileMD5() {
         File file = new File(downloaderInfo.getSaveFilePath(), downloaderInfo.getFileName());
 
+        //大文件计算md5是比较耗时的，所以这里使用RxJava框架来处理
         Observable.just(file)
                 .subscribeOn(Schedulers.io())
                 .map(new Function<File, String>() {

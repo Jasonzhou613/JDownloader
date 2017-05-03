@@ -21,7 +21,7 @@ import java.util.Map;
  * <b>version:</b> 1.0 <br>
  * <b>last modified date:</b> 2016/5/5 11:14
  */
-class Utils {
+final class Utils {
     private final static String TAG = "Utils";
 
     /**
