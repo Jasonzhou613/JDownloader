@@ -190,6 +190,7 @@ public class MultiDownloadActivity extends AppCompatActivity implements View.OnC
 
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        position = 0;
                         boolean deleteFile = cbDeleteFile.isChecked();
                         JDownloaderManager.getInstance(MultiDownloadActivity.this).deleteAll(deleteFile);
                         mAdapter.notifyDataSetChanged2();

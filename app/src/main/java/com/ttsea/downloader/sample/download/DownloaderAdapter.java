@@ -29,7 +29,7 @@ import java.util.Map;
  * <b>author:</b> Jason <br>
  * <b>version:</b> 1.0 <br>
  */
-public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.ViewHolder> {
+class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.ViewHolder> {
     private final String TAG = "DownloaderAdapter";
 
     private Context mContext;
@@ -236,7 +236,11 @@ public class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.Vi
         if (map == null) {
             return;
         }
-        for (Map.Entry<String, Downloader> entry : map.entrySet()) {
+
+        //进行排序后赋值给mList
+        Map<String, Downloader> temp = Utils.sortByValue(map);
+
+        for (Map.Entry<String, Downloader> entry : temp.entrySet()) {
             mList.add(entry.getValue());
         }
     }

@@ -7,7 +7,6 @@ import com.ttsea.downloader.R;
 import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,34 +25,39 @@ class Utils {
     private final static String TAG = "Utils";
 
     /**
-     * 对Map进行排序
+     * 对map排序
      *
-     * @param unsortMap 需要排序的Map
-     * @return Map
+     * @param map 要排序的map
+     * @return LinkedHashMap
      */
-    public static Map<String, String> sortByComparator(Map<String, String> unsortMap) {
-        List list = new LinkedList(unsortMap.entrySet());
-        // sort list based on comparator
-        Collections.sort(list, new Comparator() {
-            public int compare(Object o1, Object o2) {
-                if (o1 == null || o2 == null
-                        || ((Map.Entry) (o1)).getValue() == null
-                        || ((Map.Entry) (o2)).getValue() == null) {
+    public static Map<String, Downloader> sortByValue(Map<String, Downloader> map) {
+        List<Map.Entry<String, Downloader>> list = new LinkedList<>(map.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<String, Downloader>>() {
+            @Override
+            public int compare(Map.Entry<String, Downloader> o1, Map.Entry<String, Downloader> o2) {
+                Downloader d1 = o1.getValue();
+                Downloader d2 = o2.getValue();
+                if (d1 == null || d2 == null) {
                     return 0;
                 }
-                return ((Comparable) ((Map.Entry) (o1)).getValue())
-                        .compareTo(((Map.Entry) (o2)).getValue());
+                try {
+                    long d1Time = Long.parseLong(d1.getDownloaderInfo().getAddTimestamp());
+                    long d2Time = Long.parseLong(d2.getDownloaderInfo().getAddTimestamp());
+
+                    return (int) (d1Time - d2Time);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return 0;
             }
         });
 
-        // put sorted list into map again
-        //LinkedHashMap make sure order in which keys were inserted
-        Map sortedMap = new LinkedHashMap();
-        for (Iterator it = list.iterator(); it.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) it.next();
-            sortedMap.put(entry.getKey(), entry.getValue());
+        Map<String, Downloader> result = new LinkedHashMap<String, Downloader>();
+        for (Map.Entry<String, Downloader> entry : list) {
+            result.put(entry.getKey(), entry.getValue());
         }
-        return sortedMap;
+        return result;
     }
 
     /** 判断str是否为空 */

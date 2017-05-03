@@ -8,7 +8,7 @@ package com.ttsea.downloader.sample.download;
  * <b>author:</b> Jason <br>
  * <b>version:</b> 1.0 <br>
  */
-public class DListener implements com.ttsea.downloader.listener.DownloaderListener {
+class DListener implements com.ttsea.downloader.listener.DownloaderListener {
     private DownloaderAdapter adapter;
     private String url;
 

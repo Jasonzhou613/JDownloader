@@ -10,7 +10,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.reactivex.Observable;
@@ -154,8 +153,9 @@ public class JDownloaderManager {
             return;
         }
 
+        Map<String, Downloader> tmpMap = Utils.sortByValue(downloaderMap);
         boolean repeat = false;
-        for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
+        for (Map.Entry<String, Downloader> entry : tmpMap.entrySet()) {
             Downloader downloader = entry.getValue();
             if (downloader != null && downloader.getState() == Downloader.STATE_PENDING) {
                 downloader.start();
@@ -163,6 +163,7 @@ public class JDownloaderManager {
                 break;
             }
         }
+
         if (repeat) {
             fit();
         }
@@ -264,7 +265,7 @@ public class JDownloaderManager {
     }
 
     /**
-     * 取消所有等待下载或者正在下载的任务
+     * 所有等待下载、正在下载和暂停了的下载任务都会被取消
      *
      * @param reason 取消下载原因<br>
      *               {@link Downloader#ERROR_UNKNOWN},
@@ -279,7 +280,8 @@ public class JDownloaderManager {
         for (Map.Entry<String, Downloader> entry : downloaderMap.entrySet()) {
             Downloader downloader = entry.getValue();
             if (downloader != null) {
-                if ((downloader.getState() == Downloader.STATE_PENDING || downloader.isRunning())) {
+                if ((downloader.getState() == Downloader.STATE_PENDING || downloader.isRunning())
+                        || downloader.getState() == Downloader.STATE_PAUSED) {
                     downloader.cancel(reason);
                 }
             }
@@ -417,7 +419,7 @@ public class JDownloaderManager {
                 long d1Time = Long.parseLong(d1.getDownloaderInfo().getAddTimestamp());
                 long d2Time = Long.parseLong(d2.getDownloaderInfo().getAddTimestamp());
 
-                return d1Time > d2Time ? 1 : 0;
+                return (int) (d1Time - d2Time);
 
             } catch (Exception e) {
                 e.printStackTrace();
